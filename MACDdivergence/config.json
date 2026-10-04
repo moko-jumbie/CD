@@ -1,0 +1,109 @@
+{
+  "Name": "MACD Convergence Divergence",
+  "AccessRights": "None",
+  "IsOverlay": false,
+  "ScalePrecision": 5,
+  "Parameters": [
+    {
+      "Name": "FastPeriod",
+      "DefaultValue": 12,
+      "Type": "Integer",
+      "MinValue": 2,
+      "MaxValue": 200,
+      "Step": 1,
+      "Group": "MACD"
+    },
+    {
+      "Name": "SlowPeriod",
+      "DefaultValue": 26,
+      "Type": "Integer",
+      "MinValue": 2,
+      "MaxValue": 400,
+      "Step": 1,
+      "Group": "MACD"
+    },
+    {
+      "Name": "SignalPeriod",
+      "DefaultValue": 9,
+      "Type": "Integer",
+      "MinValue": 1,
+      "MaxValue": 100,
+      "Step": 1,
+      "Group": "MACD"
+    },
+    {
+      "Name": "PivotBars",
+      "DefaultValue": 5,
+      "Type": "Integer",
+      "MinValue": 2,
+      "MaxValue": 50,
+      "Step": 1,
+      "Group": "Divergence"
+    },
+    {
+      "Name": "ShowRegularDivergences",
+      "DefaultValue": true,
+      "Type": "Boolean",
+      "Group": "Divergence"
+    },
+    {
+      "Name": "ShowHiddenDivergences",
+      "DefaultValue": true,
+      "Type": "Boolean",
+      "Group": "Divergence"
+    },
+    {
+      "Name": "ShowConvergences",
+      "DefaultValue": true,
+      "Type": "Boolean",
+      "Group": "Divergence"
+    },
+    {
+      "Name": "ShowBullishConvergenceOnHighsOnly",
+      "DefaultValue": true,
+      "Type": "Boolean",
+      "Group": "Divergence"
+    },
+    {
+      "Name": "ShowBearishConvergenceOnLowsOnly",
+      "DefaultValue": true,
+      "Type": "Boolean",
+      "Group": "Divergence"
+    },
+    {
+      "Name": "ShowPriceLines",
+      "DefaultValue": true,
+      "Type": "Boolean",
+      "Group": "Display"
+    },
+    {
+      "Name": "ShowOscillatorLines",
+      "DefaultValue": true,
+      "Type": "Boolean",
+      "Group": "Display"
+    }
+  ],
+  "LineOutputs": [
+    {
+      "DisplayName": "MACD",
+      "Name": "MacdLine",
+      "PlotType": "Line",
+      "Thickness": 2,
+      "Color": "DodgerBlue"
+    },
+    {
+      "DisplayName": "Signal",
+      "Name": "SignalLine",
+      "PlotType": "Line",
+      "Thickness": 1,
+      "Color": "Orange"
+    },
+    {
+      "DisplayName": "Histogram",
+      "Name": "Histogram",
+      "PlotType": "Histogram",
+      "Thickness": 1,
+      "Color": "Gray"
+    }
+  ]
+}

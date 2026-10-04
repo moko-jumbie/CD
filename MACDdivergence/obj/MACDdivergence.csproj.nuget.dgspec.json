@@ -1,0 +1,93 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\kaydi\\OneDrive\\Documents\\cAlgo\\Sources\\Indicators\\MACDdivergence\\MACDdivergence\\MACDdivergence.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\kaydi\\OneDrive\\Documents\\cAlgo\\Sources\\Indicators\\MACDdivergence\\MACDdivergence\\MACDdivergence.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\kaydi\\OneDrive\\Documents\\cAlgo\\Sources\\Indicators\\MACDdivergence\\MACDdivergence\\MACDdivergence.csproj",
+        "projectName": "MACDdivergence",
+        "projectPath": "C:\\Users\\kaydi\\OneDrive\\Documents\\cAlgo\\Sources\\Indicators\\MACDdivergence\\MACDdivergence\\MACDdivergence.csproj",
+        "packagesPath": "C:\\Users\\kaydi\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\kaydi\\OneDrive\\Documents\\cAlgo\\Sources\\Indicators\\MACDdivergence\\MACDdivergence\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\kaydi\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "framework": "net6.0",
+            "targetAlias": "net6.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.400"
+      },
+      "frameworks": {
+        "net6.0": {
+          "framework": "net6.0",
+          "targetAlias": "net6.0",
+          "dependencies": {
+            "cTrader.Automate": {
+              "target": "Package",
+              "version": "[*, )"
+            },
+            "cTrader.Automate.SourceGenerators": {
+              "target": "Package",
+              "version": "[*, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[6.0.36, 6.0.36]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[6.0.36, 6.0.36]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[6.0.36, 6.0.36]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.401\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
