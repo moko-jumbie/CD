@@ -2,6 +2,7 @@
   "Name": "MACD Convergence Divergence",
   "AccessRights": "None",
   "IsOverlay": false,
+  "TimeZone": "Russian Standard Time",
   "ScalePrecision": 5,
   "Parameters": [
     {
@@ -81,6 +82,27 @@
       "DefaultValue": true,
       "Type": "Boolean",
       "Group": "Display"
+    },
+    {
+      "Name": "ShowPivotPoints",
+      "DefaultValue": true,
+      "Type": "Boolean",
+      "Group": "Pivot Points"
+    },
+    {
+      "Name": "ShowPreviousDayLevels",
+      "DefaultValue": true,
+      "Type": "Boolean",
+      "Group": "Pivot Points"
+    },
+    {
+      "Name": "PivotDays",
+      "DefaultValue": 5,
+      "Type": "Integer",
+      "MinValue": 1,
+      "MaxValue": 30,
+      "Step": 1,
+      "Group": "Pivot Points"
     }
   ],
   "LineOutputs": [

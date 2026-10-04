@@ -25,11 +25,15 @@ public partial class MACDdivergence : Indicator
     private const double ArrowOffset = 0.6;
     private const double LabelOffset = 1.8;
 
+    private static readonly Color PivotColor = Color.Magenta;
+    private static readonly Color PreviousDayLevelColor = Color.Gold;
+
     private MacdCrossOver _macd;
     private readonly List<SwingPoint> _swingHighs = new List<SwingPoint>();
     private readonly List<SwingPoint> _swingLows = new List<SwingPoint>();
     private readonly HashSet<string> _chartObjects = new HashSet<string>();
     private readonly HashSet<string> _indicatorObjects = new HashSet<string>();
+    private readonly List<string> _levelObjects = new List<string>();
     private int _lastDetectionIndex = -1;
 
     protected override void Initialize()
@@ -41,6 +45,9 @@ public partial class MACDdivergence : Indicator
     protected override void OnDestroy()
     {
         foreach (var name in _chartObjects)
+            Chart.RemoveObject(name);
+
+        foreach (var name in _levelObjects)
             Chart.RemoveObject(name);
 
         if (IndicatorArea == null)
@@ -67,6 +74,9 @@ public partial class MACDdivergence : Indicator
         _lastDetectionIndex = index;
 
         DetectSwing(index);
+
+        if (index == Bars.Count - 1)
+            DrawDailyLevels(index);
     }
 
     private void ResetSwings()
@@ -261,5 +271,101 @@ public partial class MACDdivergence : Indicator
             default:
                 return "Bear Convergence";
         }
+    }
+
+    private sealed class DaySlice
+    {
+        public DateTime Date;
+        public DateTime StartTime;
+        public double High;
+        public double Low;
+        public double Close;
+    }
+
+    private List<DaySlice> CollectDays(int lastIndex, int maxDays)
+    {
+        var days = new List<DaySlice>();
+        DaySlice current = null;
+
+        for (var i = lastIndex; i >= 0 && days.Count < maxDays; i--)
+        {
+            var time = Bars.OpenTimes[i];
+            var date = time.Date;
+
+            if (current == null || current.Date != date)
+            {
+                current = new DaySlice
+                {
+                    Date = date,
+                    StartTime = time,
+                    High = Bars.HighPrices[i],
+                    Low = Bars.LowPrices[i],
+                    Close = Bars.ClosePrices[i]
+                };
+                days.Add(current);
+            }
+            else
+            {
+                current.StartTime = time;
+
+                var high = Bars.HighPrices[i];
+                var low = Bars.LowPrices[i];
+
+                if (high > current.High)
+                    current.High = high;
+                if (low < current.Low)
+                    current.Low = low;
+            }
+        }
+
+        return days;
+    }
+
+    private void DrawDailyLevels(int lastIndex)
+    {
+        foreach (var name in _levelObjects)
+            Chart.RemoveObject(name);
+
+        _levelObjects.Clear();
+
+        if ((!ShowPivotPoints && !ShowPreviousDayLevels) || PivotDays <= 0 || lastIndex < 1 || Chart == null)
+            return;
+
+        var days = CollectDays(lastIndex, PivotDays + 2);
+        var targetCount = Math.Min(PivotDays, days.Count - 1);
+
+        for (var k = 0; k < targetCount; k++)
+        {
+            var day = days[k];
+            var previous = days[k + 1];
+            var dayEnd = day.Date.AddDays(1);
+
+            if (ShowPreviousDayLevels)
+            {
+                DrawLevelLine(day.StartTime, dayEnd, day.Date, "PDH", previous.High, PreviousDayLevelColor, 2);
+                DrawLevelLine(day.StartTime, dayEnd, day.Date, "PDL", previous.Low, PreviousDayLevelColor, 2);
+            }
+
+            if (!ShowPivotPoints)
+                continue;
+
+            var pivot = (previous.High + previous.Low + previous.Close) / 3;
+            var range = previous.High - previous.Low;
+
+            DrawLevelLine(day.StartTime, dayEnd, day.Date, "P", pivot, PivotColor, 1);
+            DrawLevelLine(day.StartTime, dayEnd, day.Date, "R1", 2 * pivot - previous.Low, PivotColor, 1);
+            DrawLevelLine(day.StartTime, dayEnd, day.Date, "R2", pivot + range, PivotColor, 1);
+            DrawLevelLine(day.StartTime, dayEnd, day.Date, "R3", previous.High + 2 * (pivot - previous.Low), PivotColor, 1);
+            DrawLevelLine(day.StartTime, dayEnd, day.Date, "S1", 2 * pivot - previous.High, PivotColor, 1);
+            DrawLevelLine(day.StartTime, dayEnd, day.Date, "S2", pivot - range, PivotColor, 1);
+            DrawLevelLine(day.StartTime, dayEnd, day.Date, "S3", previous.Low - 2 * (previous.High - pivot), PivotColor, 1);
+        }
+    }
+
+    private void DrawLevelLine(DateTime start, DateTime end, DateTime date, string level, double price, Color color, int thickness)
+    {
+        var name = $"{ObjectPrefix}_Level_{date:yyyyMMdd}_{level}";
+        Chart.DrawTrendLine(name, start, price, end, price, color, thickness);
+        _levelObjects.Add(name);
     }
 }

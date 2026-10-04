@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MACDdivergence")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7aea4537916cb58f6a2cce5324d8ed8cfe2b61b1")]
 [assembly: System.Reflection.AssemblyProductAttribute("MACDdivergence")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MACDdivergence")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -7,7 +7,7 @@
     "ShortName": null,
     "TypeName": "cAlgo.Indicators.MACDdivergence",
     "AssemblyName": "MACDdivergence, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
-    "TimeZone": "UTC",
+    "TimeZone": "Russian Standard Time",
     "IsOverlay": false,
     "IsPercentage": false,
     "ScalePrecision": 5,
@@ -166,6 +166,36 @@
         "PropertyName": "ShowOscillatorLines",
         "FriendlyName": "ShowOscillatorLines",
         "GroupName": "Display",
+        "IsValueVisibleInTitle": true,
+        "Description": ""
+      },
+      {
+        "DefaultValue": true,
+        "ParameterType": "Boolean",
+        "PropertyName": "ShowPivotPoints",
+        "FriendlyName": "ShowPivotPoints",
+        "GroupName": "Pivot Points",
+        "IsValueVisibleInTitle": true,
+        "Description": ""
+      },
+      {
+        "DefaultValue": true,
+        "ParameterType": "Boolean",
+        "PropertyName": "ShowPreviousDayLevels",
+        "FriendlyName": "ShowPreviousDayLevels",
+        "GroupName": "Pivot Points",
+        "IsValueVisibleInTitle": true,
+        "Description": ""
+      },
+      {
+        "MinValue": 1,
+        "MaxValue": 30,
+        "Step": 1,
+        "DefaultValue": 5,
+        "ParameterType": "Integer",
+        "PropertyName": "PivotDays",
+        "FriendlyName": "PivotDays",
+        "GroupName": "Pivot Points",
         "IsValueVisibleInTitle": true,
         "Description": ""
       }
