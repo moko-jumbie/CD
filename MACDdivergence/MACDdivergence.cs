@@ -27,6 +27,7 @@ public partial class MACDdivergence : Indicator
 
     private static readonly Color PivotColor = Color.Magenta;
     private static readonly Color PreviousDayLevelColor = Color.Gold;
+    private static readonly Color FormingColor = Color.DarkGray;
 
     private MacdCrossOver _macd;
     private readonly List<SwingPoint> _swingHighs = new List<SwingPoint>();
@@ -35,6 +36,8 @@ public partial class MACDdivergence : Indicator
     private readonly HashSet<string> _indicatorObjects = new HashSet<string>();
     private readonly List<string> _levelObjects = new List<string>();
     private int _lastDetectionIndex = -1;
+    private string _formingHighId;
+    private string _formingLowId;
 
     protected override void Initialize()
     {
@@ -76,13 +79,20 @@ public partial class MACDdivergence : Indicator
         DetectSwing(index);
 
         if (index == Bars.Count - 1)
+        {
             DrawDailyLevels(index);
+            UpdateForming(index);
+        }
     }
 
     private void ResetSwings()
     {
         _swingHighs.Clear();
         _swingLows.Clear();
+
+        // The remembered forming ids refer to swings of the discarded series.
+        _formingHighId = null;
+        _formingLowId = null;
     }
 
     private void DetectSwing(int index)
@@ -139,14 +149,30 @@ public partial class MACDdivergence : Indicator
 
     private void RegisterSwing(SwingPoint current, List<SwingPoint> swings)
     {
+        string drawnId = null;
+
         if (swings.Count > 0)
         {
             var previous = swings[swings.Count - 1];
             var kind = Classify(previous, current);
 
             if (kind.HasValue && ShouldShow(current, kind.Value))
-                DrawSignal(previous, current, kind.Value);
+            {
+                drawnId = SignalId(previous, current);
+                DrawSignal(previous, current, kind.Value, GetColor(kind.Value));
+            }
         }
+
+        // The confirmed swing supersedes the grey signal that was forming for
+        // this side; keep it only when it is the very pair just recoloured.
+        var formingId = current.IsHigh ? _formingHighId : _formingLowId;
+        if (formingId != null && formingId != drawnId)
+            RemoveSignalObjects(formingId);
+
+        if (current.IsHigh)
+            _formingHighId = null;
+        else
+            _formingLowId = null;
 
         swings.Add(current);
     }
@@ -188,10 +214,9 @@ public partial class MACDdivergence : Indicator
         }
     }
 
-    private void DrawSignal(SwingPoint previous, SwingPoint current, SignalKind kind)
+    private void DrawSignal(SwingPoint previous, SwingPoint current, SignalKind kind, Color color)
     {
-        var color = GetColor(kind);
-        var id = $"{(current.IsHigh ? "H" : "L")}{previous.Index}_{current.Index}";
+        var id = SignalId(previous, current);
 
         if (ShowPriceLines)
         {
@@ -214,6 +239,116 @@ public partial class MACDdivergence : Indicator
             var oscillatorLine = $"{ObjectPrefix}_Osc_{id}";
             IndicatorArea.DrawTrendLine(oscillatorLine, previous.Time, previous.Macd, current.Time, current.Macd, color, 2);
             _indicatorObjects.Add(oscillatorLine);
+        }
+    }
+
+    private static string SignalId(SwingPoint previous, SwingPoint current)
+    {
+        return $"{(current.IsHigh ? "H" : "L")}{previous.Index}_{current.Index}";
+    }
+
+    private void RemoveSignalObjects(string id)
+    {
+        if (ShowPriceLines)
+        {
+            foreach (var name in new[]
+            {
+                $"{ObjectPrefix}_Price_{id}",
+                $"{ObjectPrefix}_Arrow_{id}",
+                $"{ObjectPrefix}_Label_{id}"
+            })
+            {
+                Chart.RemoveObject(name);
+                _chartObjects.Remove(name);
+            }
+        }
+
+        if (ShowOscillatorLines && IndicatorArea != null)
+        {
+            var oscillatorLine = $"{ObjectPrefix}_Osc_{id}";
+            IndicatorArea.RemoveObject(oscillatorLine);
+            _indicatorObjects.Remove(oscillatorLine);
+        }
+    }
+
+    private void UpdateForming(int index)
+    {
+        UpdateFormingSide(index, true, _swingHighs);
+        UpdateFormingSide(index, false, _swingLows);
+    }
+
+    private void UpdateFormingSide(int index, bool isHigh, List<SwingPoint> swings)
+    {
+        var formingId = isHigh ? _formingHighId : _formingLowId;
+        string newId = null;
+
+        if (swings.Count > 0)
+        {
+            var previous = swings[swings.Count - 1];
+            var candidate = FindFormingCandidate(index, isHigh, previous.Index);
+
+            if (candidate != null)
+            {
+                var kind = Classify(previous, candidate);
+
+                if (kind.HasValue && ShouldShow(candidate, kind.Value))
+                {
+                    newId = SignalId(previous, candidate);
+
+                    // Same pair as before: the grey objects are already on the chart.
+                    if (newId == formingId)
+                        return;
+
+                    DrawSignal(previous, candidate, kind.Value, FormingColor);
+                }
+            }
+        }
+
+        if (formingId != null && formingId != newId)
+            RemoveSignalObjects(formingId);
+
+        if (isHigh)
+            _formingHighId = newId;
+        else
+            _formingLowId = newId;
+    }
+
+    private SwingPoint FindFormingCandidate(int index, bool isHigh, int previousIndex)
+    {
+        // A pivot is only ever registered after index - PivotBars - 1 has been
+        // tested, so the bars that can still confirm run from index - PivotBars
+        // to the last closed bar; anything older has already passed or failed.
+        var from = Math.Max(previousIndex + PivotBars + 1, index - PivotBars);
+        var to = index - 1;
+
+        for (var candidate = from; candidate <= to; candidate++)
+            if (IsExtremeThrough(candidate, isHigh, index - 1))
+                return CreateSwing(candidate, isHigh);
+
+        return null;
+    }
+
+    private bool IsExtremeThrough(int candidate, bool isHigh, int lastClosed)
+    {
+        if (isHigh)
+        {
+            var value = Bars.HighPrices[candidate];
+
+            for (var i = candidate - PivotBars; i <= lastClosed; i++)
+                if (Bars.HighPrices[i] > value)
+                    return false;
+
+            return true;
+        }
+        else
+        {
+            var value = Bars.LowPrices[candidate];
+
+            for (var i = candidate - PivotBars; i <= lastClosed; i++)
+                if (Bars.LowPrices[i] < value)
+                    return false;
+
+            return true;
         }
     }
 
