@@ -1,4 +1,4 @@
-namespace cAlgo.Indicators;
+﻿namespace cAlgo.Indicators;
 
 public partial class MACDdivergence : Indicator
 {
@@ -38,6 +38,12 @@ public partial class MACDdivergence : Indicator
     private int _lastDetectionIndex = -1;
     private string _formingHighId;
     private string _formingLowId;
+    private int _lastBearConvIndex = -1;
+    private double _lastBearConvLow;
+    private int _lastBullConvIndex = -1;
+    private double _lastBullConvHigh;
+    private string _lastAlertedFormingHighId;
+    private string _lastAlertedFormingLowId;
 
     protected override void Initialize()
     {
@@ -93,6 +99,8 @@ public partial class MACDdivergence : Indicator
         // The remembered forming ids refer to swings of the discarded series.
         _formingHighId = null;
         _formingLowId = null;
+        _lastBearConvIndex = -1;
+        _lastBullConvIndex = -1;
     }
 
     private void DetectSwing(int index)
@@ -160,6 +168,7 @@ public partial class MACDdivergence : Indicator
             {
                 drawnId = SignalId(previous, current);
                 DrawSignal(previous, current, kind.Value, GetColor(kind.Value));
+                UpdateConfirmedConvTracking(current, kind.Value, previous);
             }
         }
 
@@ -175,6 +184,20 @@ public partial class MACDdivergence : Indicator
             _formingLowId = null;
 
         swings.Add(current);
+    }
+
+    private void UpdateConfirmedConvTracking(SwingPoint current, SignalKind kind, SwingPoint previous)
+    {
+        if (kind == SignalKind.BearishConvergence)
+        {
+            _lastBearConvIndex = current.Index;
+            _lastBearConvLow = current.Price;
+        }
+        else if (kind == SignalKind.BullishConvergence)
+        {
+            _lastBullConvIndex = current.Index;
+            _lastBullConvHigh = current.Price;
+        }
     }
 
     private static SignalKind? Classify(SwingPoint previous, SwingPoint current)
@@ -300,6 +323,7 @@ public partial class MACDdivergence : Indicator
                         return;
 
                     DrawSignal(previous, candidate, kind.Value, FormingColor);
+                    CheckFormingConvergenceAlert(candidate, kind.Value, previous, newId);
                 }
             }
         }
@@ -502,5 +526,61 @@ public partial class MACDdivergence : Indicator
         var name = $"{ObjectPrefix}_Level_{date:yyyyMMdd}_{level}";
         Chart.DrawTrendLine(name, start, price, end, price, color, thickness);
         _levelObjects.Add(name);
+    }
+
+    private bool IsFiveMinuteChart()
+    {
+        try
+        {
+            // cTrader: check TimeFrame
+            return Bars.TimeFrame == TimeFrame.Minute5;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private void CheckFormingConvergenceAlert(SwingPoint candidate, SignalKind kind, SwingPoint previous, string formingId)
+    {
+        if (!IsFiveMinuteChart())
+            return;
+
+        var pipSize = Symbol.PipSize;
+        var tolerance = pipSize; // ±1 pip
+
+        if (kind == SignalKind.BearishConvergence)
+        {
+            // Bear Convergence forming (lower lows expected): compare candidate low to last Bear Convergence low
+            if (_lastBearConvIndex < 0)
+                return;
+
+            if (formingId == _lastAlertedFormingHighId) // not used for lows, but avoid cross; just track by id
+                return;
+
+            if (candidate.Price <= _lastBearConvLow + tolerance)
+            {
+                if (formingId != _lastAlertedFormingLowId)
+                {
+                    _lastAlertedFormingLowId = formingId;
+                    Print("Bear Convergence forming near/above last Bear Convergence low");
+
+                }
+            }
+        }
+        else if (kind == SignalKind.BullishConvergence)
+        {
+            if (_lastBullConvIndex < 0)
+                return;
+
+            if (candidate.Price >= _lastBullConvHigh - tolerance)
+            {
+                if (formingId != _lastAlertedFormingHighId)
+                {
+                    _lastAlertedFormingHighId = formingId;
+                    Print("Bull Convergence forming near/below last Bull Convergence high");
+                }
+            }
+        }
     }
 }
