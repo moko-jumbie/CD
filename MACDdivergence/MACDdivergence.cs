@@ -37,13 +37,17 @@ public partial class MACDdivergence : Indicator
     private readonly List<string> _levelObjects = new List<string>();
     private int _lastDetectionIndex = -1;
     private string _formingHighId;
+    private double _formingHighPrice;
+    private double _formingHighMacd;
     private string _formingLowId;
+    private double _formingLowPrice;
+    private double _formingLowMacd;
     private int _lastBearConvIndex = -1;
     private double _lastBearConvLow;
     private int _lastBullConvIndex = -1;
     private double _lastBullConvHigh;
-    private string _lastAlertedFormingHighId;
-    private string _lastAlertedFormingLowId;
+    private bool _bearConvAlertArmed = true;
+    private bool _bullConvAlertArmed = true;
 
     protected override void Initialize()
     {
@@ -73,7 +77,14 @@ public partial class MACDdivergence : Indicator
         Histogram[index] = _macd.Histogram[index];
 
         if (index == _lastDetectionIndex)
+        {
+            // Re-run on every tick of the last bar so the forming signal tracks
+            // the current bar's new high/low while the bar is still printing.
+            if (index == Bars.Count - 1)
+                UpdateForming(index);
+
             return;
+        }
 
         // A lower index means the series was recalculated from scratch, so the
         // remembered swings no longer describe the bars now being replayed.
@@ -101,6 +112,8 @@ public partial class MACDdivergence : Indicator
         _formingLowId = null;
         _lastBearConvIndex = -1;
         _lastBullConvIndex = -1;
+        _bearConvAlertArmed = true;
+        _bullConvAlertArmed = true;
     }
 
     private void DetectSwing(int index)
@@ -188,15 +201,19 @@ public partial class MACDdivergence : Indicator
 
     private void UpdateConfirmedConvTracking(SwingPoint current, SignalKind kind, SwingPoint previous)
     {
-        if (kind == SignalKind.BearishConvergence)
+        // The alerts compare the same swing side, so only lows count for a Bear
+        // Convergence and only highs for a Bull Convergence.
+        if (kind == SignalKind.BearishConvergence && !current.IsHigh)
         {
             _lastBearConvIndex = current.Index;
             _lastBearConvLow = current.Price;
+            _bearConvAlertArmed = true;
         }
-        else if (kind == SignalKind.BullishConvergence)
+        else if (kind == SignalKind.BullishConvergence && current.IsHigh)
         {
             _lastBullConvIndex = current.Index;
             _lastBullConvHigh = current.Price;
+            _bullConvAlertArmed = true;
         }
     }
 
@@ -303,6 +320,8 @@ public partial class MACDdivergence : Indicator
     private void UpdateFormingSide(int index, bool isHigh, List<SwingPoint> swings)
     {
         var formingId = isHigh ? _formingHighId : _formingLowId;
+        var formingPrice = isHigh ? _formingHighPrice : _formingLowPrice;
+        var formingMacd = isHigh ? _formingHighMacd : _formingLowMacd;
         string newId = null;
 
         if (swings.Count > 0)
@@ -318,12 +337,27 @@ public partial class MACDdivergence : Indicator
                 {
                     newId = SignalId(previous, candidate);
 
-                    // Same pair as before: the grey objects are already on the chart.
-                    if (newId == formingId)
-                        return;
+                    // Redraw when the pair is new or the current bar extended
+                    // the swing, so the grey line follows the live bar.
+                    var changed = newId != formingId
+                        || candidate.Price != formingPrice
+                        || candidate.Macd != formingMacd;
 
-                    DrawSignal(previous, candidate, kind.Value, FormingColor);
-                    CheckFormingConvergenceAlert(candidate, kind.Value, previous, newId);
+                    if (changed)
+                        DrawSignal(previous, candidate, kind.Value, FormingColor);
+
+                    CheckFormingConvergenceAlert(candidate, kind.Value);
+
+                    if (isHigh)
+                    {
+                        _formingHighPrice = candidate.Price;
+                        _formingHighMacd = candidate.Macd;
+                    }
+                    else
+                    {
+                        _formingLowPrice = candidate.Price;
+                        _formingLowMacd = candidate.Macd;
+                    }
                 }
             }
         }
@@ -339,14 +373,14 @@ public partial class MACDdivergence : Indicator
 
     private SwingPoint FindFormingCandidate(int index, bool isHigh, int previousIndex)
     {
-        // A pivot is only ever registered after index - PivotBars - 1 has been
-        // tested, so the bars that can still confirm run from index - PivotBars
-        // to the last closed bar; anything older has already passed or failed.
+        // Bars index - PivotBars .. index - 1 have not been pivot-tested yet and
+        // the current bar can itself become the swing while it is still printing;
+        // anything older has already passed or failed.
         var from = Math.Max(previousIndex + PivotBars + 1, index - PivotBars);
-        var to = index - 1;
+        var to = index;
 
         for (var candidate = from; candidate <= to; candidate++)
-            if (IsExtremeThrough(candidate, isHigh, index - 1))
+            if (IsExtremeThrough(candidate, isHigh, index))
                 return CreateSwing(candidate, isHigh);
 
         return null;
@@ -528,6 +562,11 @@ public partial class MACDdivergence : Indicator
         _levelObjects.Add(name);
     }
 
+    private string FormatPrice(double price)
+    {
+        return price.ToString($"F{Symbol.Digits}");
+    }
+
     private bool IsFiveMinuteChart()
     {
         try
@@ -541,46 +580,52 @@ public partial class MACDdivergence : Indicator
         }
     }
 
-    private void CheckFormingConvergenceAlert(SwingPoint candidate, SignalKind kind, SwingPoint previous, string formingId)
+    private void CheckFormingConvergenceAlert(SwingPoint candidate, SignalKind kind)
     {
         if (!IsFiveMinuteChart())
             return;
 
-        var pipSize = Symbol.PipSize;
-        var tolerance = pipSize; // ±1 pip
+        var tolerance = Symbol.PipSize; // plus/minus 1 pip
 
-        if (kind == SignalKind.BearishConvergence)
+        if (kind == SignalKind.BearishConvergence && !candidate.IsHigh)
         {
-            // Bear Convergence forming (lower lows expected): compare candidate low to last Bear Convergence low
             if (_lastBearConvIndex < 0)
                 return;
 
-            if (formingId == _lastAlertedFormingHighId) // not used for lows, but avoid cross; just track by id
+            // Bullish alert when the forming lower low is higher than the last
+            // Bear Convergence low, or equal within one pip.
+            if (candidate.Price < _lastBearConvLow - tolerance)
+            {
+                _bearConvAlertArmed = true;
+                return;
+            }
+
+            if (!_bearConvAlertArmed)
                 return;
 
-            if (candidate.Price <= _lastBearConvLow + tolerance)
-            {
-                if (formingId != _lastAlertedFormingLowId)
-                {
-                    _lastAlertedFormingLowId = formingId;
-                    Print("Bear Convergence forming near/above last Bear Convergence low");
-
-                }
-            }
+            _bearConvAlertArmed = false;
+            Print($"Bullish alert: Bear Convergence forming low {FormatPrice(candidate.Price)} vs last Bear Convergence low {FormatPrice(_lastBearConvLow)}");
+            Notifications.ShowPopup("Bullish Alert", $"Bear Convergence forming: low {FormatPrice(candidate.Price)} vs last Bear Convergence low {FormatPrice(_lastBearConvLow)}", PopupNotificationState.Information);
         }
-        else if (kind == SignalKind.BullishConvergence)
+        else if (kind == SignalKind.BullishConvergence && candidate.IsHigh)
         {
             if (_lastBullConvIndex < 0)
                 return;
 
-            if (candidate.Price >= _lastBullConvHigh - tolerance)
+            // Bearish alert when the forming higher high is lower than the last
+            // Bull Convergence high, or equal within one pip.
+            if (candidate.Price > _lastBullConvHigh + tolerance)
             {
-                if (formingId != _lastAlertedFormingHighId)
-                {
-                    _lastAlertedFormingHighId = formingId;
-                    Print("Bull Convergence forming near/below last Bull Convergence high");
-                }
+                _bullConvAlertArmed = true;
+                return;
             }
+
+            if (!_bullConvAlertArmed)
+                return;
+
+            _bullConvAlertArmed = false;
+            Print($"Bearish alert: Bull Convergence forming high {FormatPrice(candidate.Price)} vs last Bull Convergence high {FormatPrice(_lastBullConvHigh)}");
+            Notifications.ShowPopup("Bearish Alert", $"Bull Convergence forming: high {FormatPrice(candidate.Price)} vs last Bull Convergence high {FormatPrice(_lastBullConvHigh)}", PopupNotificationState.Information);
         }
     }
 }
