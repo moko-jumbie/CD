@@ -48,6 +48,7 @@ public partial class MACDdivergence : Indicator
     private double _lastBullConvHigh;
     private bool _bearConvAlertArmed = true;
     private bool _bullConvAlertArmed = true;
+    private bool _isLive;
 
     protected override void Initialize()
     {
@@ -78,6 +79,10 @@ public partial class MACDdivergence : Indicator
 
         if (index == _lastDetectionIndex)
         {
+            // A second call for the same index means real-time ticks arrived,
+            // i.e. the historical replay is over; only then may alerts fire.
+            _isLive = true;
+
             // Re-run on every tick of the last bar so the forming signal tracks
             // the current bar's new high/low while the bar is still printing.
             if (index == Bars.Count - 1)
@@ -114,6 +119,7 @@ public partial class MACDdivergence : Indicator
         _lastBullConvIndex = -1;
         _bearConvAlertArmed = true;
         _bullConvAlertArmed = true;
+        _isLive = false;
     }
 
     private void DetectSwing(int index)
@@ -582,7 +588,9 @@ public partial class MACDdivergence : Indicator
 
     private void CheckFormingConvergenceAlert(SwingPoint candidate, SignalKind kind)
     {
-        if (!IsFiveMinuteChart())
+        // Popups and log lines only after the historical replay is done and the
+        // signal is a live forming (grey) one on the current bar.
+        if (!_isLive || !IsFiveMinuteChart())
             return;
 
         var tolerance = Symbol.PipSize; // plus/minus 1 pip
