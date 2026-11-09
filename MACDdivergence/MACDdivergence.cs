@@ -54,10 +54,23 @@ public partial class MACDdivergence : Indicator
     {
         // The accessor takes the long cycle first, then the short cycle.
         _macd = Indicators.MacdCrossOver(Bars.ClosePrices, SlowPeriod, FastPeriod, SignalPeriod);
+
+        Application.UserTimeOffsetChanged += OnUserTimeOffsetChanged;
+
+        Print($"MACDdivergence: indicator zone {TimeZone.DisplayName} (UTC{TimeZone.BaseUtcOffset.TotalHours:+0.#;-0.#;0}), platform offset UTC{Application.UserTimeOffset.TotalHours:+0.#;-0.#;0}; daily levels follow the platform day");
+    }
+
+    private void OnUserTimeOffsetChanged(UserTimeOffsetChangedEventArgs args)
+    {
+        // The platform clock moved, so the day windows have to be cut again.
+        if (Bars != null && Bars.Count > 0)
+            DrawDailyLevels(Bars.Count - 1);
     }
 
     protected override void OnDestroy()
     {
+        Application.UserTimeOffsetChanged -= OnUserTimeOffsetChanged;
+
         foreach (var name in _chartObjects)
             Chart.RemoveObject(name);
 
@@ -475,10 +488,32 @@ public partial class MACDdivergence : Indicator
     private sealed class DaySlice
     {
         public DateTime Date;
-        public DateTime StartTime;
         public double High;
         public double Low;
         public double Close;
+    }
+
+    // Bars.OpenTimes arrive in this indicator's TimeZone (config.json pins it
+    // to Russian Standard Time), but the chart - and the day separators drawn
+    // on it - run on the platform's clock (Application.UserTimeOffset). The two
+    // differ by an hour as soon as the broker moves to UTC+2 for the winter
+    // while this zone stays at UTC+3, which shifts every daily window and its
+    // levels an hour away from the boundary shown on screen. Day boundaries are
+    // therefore taken on the chart's clock and converted back for drawing.
+    private DateTime ToChartTime(DateTime time)
+    {
+        // The value is the bar's wall time in this indicator's zone, whatever
+        // Kind the platform stamped it with.
+        var wall = DateTime.SpecifyKind(time, DateTimeKind.Unspecified);
+        var utc = wall - TimeZone.GetUtcOffset(wall);
+        return utc + Application.UserTimeOffset;
+    }
+
+    private DateTime FromChartTime(DateTime chartTime)
+    {
+        var utc = DateTime.SpecifyKind(chartTime - Application.UserTimeOffset, DateTimeKind.Utc);
+        var wall = utc + TimeZone.GetUtcOffset(utc);
+        return DateTime.SpecifyKind(wall, DateTimeKind.Unspecified);
     }
 
     private List<DaySlice> CollectDays(int lastIndex, int maxDays)
@@ -489,14 +524,13 @@ public partial class MACDdivergence : Indicator
         for (var i = lastIndex; i >= 0 && days.Count < maxDays; i--)
         {
             var time = Bars.OpenTimes[i];
-            var date = time.Date;
+            var date = ToChartTime(time).Date;
 
             if (current == null || current.Date != date)
             {
                 current = new DaySlice
                 {
                     Date = date,
-                    StartTime = time,
                     High = Bars.HighPrices[i],
                     Low = Bars.LowPrices[i],
                     Close = Bars.ClosePrices[i]
@@ -505,8 +539,6 @@ public partial class MACDdivergence : Indicator
             }
             else
             {
-                current.StartTime = time;
-
                 var high = Bars.HighPrices[i];
                 var low = Bars.LowPrices[i];
 
@@ -537,12 +569,13 @@ public partial class MACDdivergence : Indicator
         {
             var day = days[k];
             var previous = days[k + 1];
-            var dayEnd = day.Date.AddDays(1);
+            var dayStart = FromChartTime(day.Date);
+            var dayEnd = FromChartTime(day.Date.AddDays(1));
 
             if (ShowPreviousDayLevels)
             {
-                DrawLevelLine(day.StartTime, dayEnd, day.Date, "PDH", previous.High, PreviousDayLevelColor, 2);
-                DrawLevelLine(day.StartTime, dayEnd, day.Date, "PDL", previous.Low, PreviousDayLevelColor, 2);
+                DrawLevelLine(dayStart, dayEnd, day.Date, "PDH", previous.High, PreviousDayLevelColor, 2);
+                DrawLevelLine(dayStart, dayEnd, day.Date, "PDL", previous.Low, PreviousDayLevelColor, 2);
             }
 
             if (!ShowPivotPoints)
@@ -551,13 +584,13 @@ public partial class MACDdivergence : Indicator
             var pivot = (previous.High + previous.Low + previous.Close) / 3;
             var range = previous.High - previous.Low;
 
-            DrawLevelLine(day.StartTime, dayEnd, day.Date, "P", pivot, PivotColor, 1);
-            DrawLevelLine(day.StartTime, dayEnd, day.Date, "R1", 2 * pivot - previous.Low, PivotColor, 1);
-            DrawLevelLine(day.StartTime, dayEnd, day.Date, "R2", pivot + range, PivotColor, 1);
-            DrawLevelLine(day.StartTime, dayEnd, day.Date, "R3", previous.High + 2 * (pivot - previous.Low), PivotColor, 1);
-            DrawLevelLine(day.StartTime, dayEnd, day.Date, "S1", 2 * pivot - previous.High, PivotColor, 1);
-            DrawLevelLine(day.StartTime, dayEnd, day.Date, "S2", pivot - range, PivotColor, 1);
-            DrawLevelLine(day.StartTime, dayEnd, day.Date, "S3", previous.Low - 2 * (previous.High - pivot), PivotColor, 1);
+            DrawLevelLine(dayStart, dayEnd, day.Date, "P", pivot, PivotColor, 1);
+            DrawLevelLine(dayStart, dayEnd, day.Date, "R1", 2 * pivot - previous.Low, PivotColor, 1);
+            DrawLevelLine(dayStart, dayEnd, day.Date, "R2", pivot + range, PivotColor, 1);
+            DrawLevelLine(dayStart, dayEnd, day.Date, "R3", previous.High + 2 * (pivot - previous.Low), PivotColor, 1);
+            DrawLevelLine(dayStart, dayEnd, day.Date, "S1", 2 * pivot - previous.High, PivotColor, 1);
+            DrawLevelLine(dayStart, dayEnd, day.Date, "S2", pivot - range, PivotColor, 1);
+            DrawLevelLine(dayStart, dayEnd, day.Date, "S3", previous.Low - 2 * (previous.High - pivot), PivotColor, 1);
         }
     }
 

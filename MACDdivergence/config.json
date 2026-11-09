@@ -1,131 +1,235 @@
 {
-  "Name": "MACD Convergence Divergence",
-  "AccessRights": "None",
-  "IsOverlay": false,
-  "TimeZone": "Russian Standard Time",
   "ScalePrecision": 5,
+  "AutoRescale": false,
+  "IsPercentage": false,
+  "IsOverlay": false,
+  "LineOutputs": [
+    {
+      "Name": "MacdLine",
+      "DisplayName": "MACD",
+      "Style": "Solid",
+      "Color": "#FF1E90FF",
+      "Thickness": 2,
+      "PlotType": "Line",
+      "IsColorCustomizable": true,
+      "IsLastValueVisibleInTitle": true,
+      "Description": "",
+      "IsVisible": true
+    },
+    {
+      "Name": "SignalLine",
+      "DisplayName": "Signal",
+      "Style": "Solid",
+      "Color": "#FFFFA500",
+      "Thickness": 1,
+      "PlotType": "Line",
+      "IsColorCustomizable": true,
+      "IsLastValueVisibleInTitle": true,
+      "Description": "",
+      "IsVisible": true
+    },
+    {
+      "Name": "Histogram",
+      "DisplayName": "Histogram",
+      "Style": "Solid",
+      "Color": "#FF808080",
+      "Thickness": 1,
+      "PlotType": "Histogram",
+      "IsColorCustomizable": true,
+      "IsLastValueVisibleInTitle": true,
+      "Description": "",
+      "IsVisible": true
+    }
+  ],
+  "BarOutputs": [],
+  "Clouds": [],
+  "Levels": [],
+  "AccessRights": "None",
+  "TimeZone": "Russian Standard Time",
+  "AdditionalInfoUrl": null,
   "Parameters": [
     {
+      "DisplayName": "",
       "Name": "FastPeriod",
-      "DefaultValue": 12,
+      "Description": "",
       "Type": "Integer",
+      "DefaultValue": 12,
       "MinValue": 2,
       "MaxValue": 200,
       "Step": 1,
-      "Group": "MACD"
+      "Group": "MACD",
+      "IsValueVisibleInTitle": true,
+      "EnumTypeFullName": null
     },
     {
+      "DisplayName": "",
       "Name": "SlowPeriod",
-      "DefaultValue": 26,
+      "Description": "",
       "Type": "Integer",
+      "DefaultValue": 26,
       "MinValue": 2,
       "MaxValue": 400,
       "Step": 1,
-      "Group": "MACD"
+      "Group": "MACD",
+      "IsValueVisibleInTitle": true,
+      "EnumTypeFullName": null
     },
     {
+      "DisplayName": "",
       "Name": "SignalPeriod",
-      "DefaultValue": 9,
+      "Description": "",
       "Type": "Integer",
+      "DefaultValue": 9,
       "MinValue": 1,
       "MaxValue": 100,
       "Step": 1,
-      "Group": "MACD"
+      "Group": "MACD",
+      "IsValueVisibleInTitle": true,
+      "EnumTypeFullName": null
     },
     {
+      "DisplayName": "",
       "Name": "PivotBars",
-      "DefaultValue": 5,
+      "Description": "",
       "Type": "Integer",
+      "DefaultValue": 5,
       "MinValue": 2,
       "MaxValue": 50,
       "Step": 1,
-      "Group": "Divergence"
+      "Group": "Divergence",
+      "IsValueVisibleInTitle": true,
+      "EnumTypeFullName": null
     },
     {
+      "DisplayName": "",
       "Name": "ShowRegularDivergences",
-      "DefaultValue": true,
+      "Description": "",
       "Type": "Boolean",
-      "Group": "Divergence"
+      "DefaultValue": "true",
+      "MinValue": null,
+      "MaxValue": null,
+      "Step": null,
+      "Group": "Divergence",
+      "IsValueVisibleInTitle": true,
+      "EnumTypeFullName": null
     },
     {
+      "DisplayName": "",
       "Name": "ShowHiddenDivergences",
-      "DefaultValue": true,
+      "Description": "",
       "Type": "Boolean",
-      "Group": "Divergence"
+      "DefaultValue": "true",
+      "MinValue": null,
+      "MaxValue": null,
+      "Step": null,
+      "Group": "Divergence",
+      "IsValueVisibleInTitle": true,
+      "EnumTypeFullName": null
     },
     {
+      "DisplayName": "",
       "Name": "ShowConvergences",
-      "DefaultValue": true,
+      "Description": "",
       "Type": "Boolean",
-      "Group": "Divergence"
+      "DefaultValue": "true",
+      "MinValue": null,
+      "MaxValue": null,
+      "Step": null,
+      "Group": "Divergence",
+      "IsValueVisibleInTitle": true,
+      "EnumTypeFullName": null
     },
     {
+      "DisplayName": "",
       "Name": "ShowBullishConvergenceOnHighsOnly",
-      "DefaultValue": true,
+      "Description": "",
       "Type": "Boolean",
-      "Group": "Divergence"
+      "DefaultValue": "true",
+      "MinValue": null,
+      "MaxValue": null,
+      "Step": null,
+      "Group": "Divergence",
+      "IsValueVisibleInTitle": true,
+      "EnumTypeFullName": null
     },
     {
+      "DisplayName": "",
       "Name": "ShowBearishConvergenceOnLowsOnly",
-      "DefaultValue": true,
+      "Description": "",
       "Type": "Boolean",
-      "Group": "Divergence"
+      "DefaultValue": "true",
+      "MinValue": null,
+      "MaxValue": null,
+      "Step": null,
+      "Group": "Divergence",
+      "IsValueVisibleInTitle": true,
+      "EnumTypeFullName": null
     },
     {
+      "DisplayName": "",
       "Name": "ShowPriceLines",
-      "DefaultValue": true,
+      "Description": "",
       "Type": "Boolean",
-      "Group": "Display"
+      "DefaultValue": "true",
+      "MinValue": null,
+      "MaxValue": null,
+      "Step": null,
+      "Group": "Display",
+      "IsValueVisibleInTitle": true,
+      "EnumTypeFullName": null
     },
     {
+      "DisplayName": "",
       "Name": "ShowOscillatorLines",
-      "DefaultValue": true,
+      "Description": "",
       "Type": "Boolean",
-      "Group": "Display"
+      "DefaultValue": "true",
+      "MinValue": null,
+      "MaxValue": null,
+      "Step": null,
+      "Group": "Display",
+      "IsValueVisibleInTitle": true,
+      "EnumTypeFullName": null
     },
     {
+      "DisplayName": "",
       "Name": "ShowPivotPoints",
-      "DefaultValue": true,
+      "Description": "",
       "Type": "Boolean",
-      "Group": "Pivot Points"
+      "DefaultValue": "true",
+      "MinValue": null,
+      "MaxValue": null,
+      "Step": null,
+      "Group": "Pivot Points",
+      "IsValueVisibleInTitle": true,
+      "EnumTypeFullName": null
     },
     {
+      "DisplayName": "",
       "Name": "ShowPreviousDayLevels",
-      "DefaultValue": true,
+      "Description": "",
       "Type": "Boolean",
-      "Group": "Pivot Points"
+      "DefaultValue": "true",
+      "MinValue": null,
+      "MaxValue": null,
+      "Step": null,
+      "Group": "Pivot Points",
+      "IsValueVisibleInTitle": true,
+      "EnumTypeFullName": null
     },
     {
+      "DisplayName": "",
       "Name": "PivotDays",
-      "DefaultValue": 5,
+      "Description": "",
       "Type": "Integer",
+      "DefaultValue": 5,
       "MinValue": 1,
       "MaxValue": 30,
       "Step": 1,
-      "Group": "Pivot Points"
+      "Group": "Pivot Points",
+      "IsValueVisibleInTitle": true,
+      "EnumTypeFullName": null
     }
   ],
-  "LineOutputs": [
-    {
-      "DisplayName": "MACD",
-      "Name": "MacdLine",
-      "PlotType": "Line",
-      "Thickness": 2,
-      "Color": "DodgerBlue"
-    },
-    {
-      "DisplayName": "Signal",
-      "Name": "SignalLine",
-      "PlotType": "Line",
-      "Thickness": 1,
-      "Color": "Orange"
-    },
-    {
-      "DisplayName": "Histogram",
-      "Name": "Histogram",
-      "PlotType": "Histogram",
-      "Thickness": 1,
-      "Color": "Gray"
-    }
-  ]
+  "Enums": []
 }
